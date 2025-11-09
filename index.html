@@ -1,1 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>echo回应</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
+        body {
+            background: linear-gradient(135deg, #fff5f7 0%, #ffe6ef 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(248, 113, 113, 0.15);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 192, 233, 0.3);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #e11d48;
+            margin-bottom: 30px;
+            font-size: 28px;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(225, 29, 72, 0.1);
+        }
+
+        h2 {
+            color: #be123c;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+
+        .input-group {
+            margin-bottom: 30px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 20px;
+            border: 2px solid #ffccd5;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background-color: #fff9fc;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #e11d48;
+            box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1);
+        }
+
+        button {
+            background: linear-gradient(45deg, #e11d48, #be123c);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-weight: 500;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(225, 29, 72, 0.3);
+        }
+
+        button:disabled {
+            background: #ffccd5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .countdown {
+            font-size: 60px;
+            font-weight: bold;
+            color: #e11d48;
+            margin: 30px 0;
+            text-shadow: 0 2px 8px rgba(225, 29, 72, 0.2);
+        }
+
+        .card-result {
+            margin-top: 30px;
+            padding: 25px;
+            background: rgba(225, 29, 72, 0.03);
+            border-radius: 12px;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .word-tag {
+            background: linear-gradient(45deg, #ffe6ef, #ffccd5);
+            color: #be123c;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(225, 29, 72, 0.1);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .dream-name {
+            color: #e11d48;
+            font-weight: bold;
+            text-decoration: underline dotted;
+            text-underline-offset: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 页面1：输入梦角名字 -->
+    <div id="page1" class="container">
+        <h1>💌 呼唤爱人</h1>
+        <div class="input-group">
+            <input type="text" id="dreamCharacter" placeholder="请输入你的梦角名字" required>
+        </div>
+        <button id="btnStartCall">开始呼唤</button>
+    </div>
+
+    <!-- 页面2：倒计时 -->
+    <div id="page2" class="container hidden">
+        <h1>用心呼唤 <span id="showDreamName" class="dream-name"></span></h1>
+        <div class="countdown" id="countdown">5</div>
+        <button id="btnEnterGame" disabled>进入游戏</button>
+    </div>
+
+    <!-- 页面3：输入问题+抽卡 -->
+    <div id="page3" class="container hidden">
+        <h1><span id="showDreamName2" class="dream-name"></span> 的回应</h1>
+        <div class="input-group">
+            <input type="text" id="question" placeholder="请输入你想问的问题" required>
+        </div>
+        <button id="btnDrawCard">抽卡获取回应</button>
+        <div class="card-result" id="resultContainer">
+            <span style="color: #999;">抽卡后将显示回应...</span>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量存储梦角名字
+        let dreamName = '';
+
+        // 预制词语库（第四组新增时间词、地点词，保留原有浪漫意象）
+        const wordLib = {
+            emotion: [
+                '高兴', '难过', '对不起', '爱你', '悲伤', '惊喜', 
+                '思念', '害羞', '愧疚', '温柔', '心动', '委屈', 
+                '甜蜜', '失落', '雀跃', '不安', '依恋', '宠溺',
+                '别扭', '真诚', '热烈', '淡然', '羞涩', '狂喜',
+                '我爱你', '好想你', '太想你', '对不起呀', '超爱你',
+                '满心欢喜', '暗自想念', '深深眷恋', '依依不舍', '满心牵挂',
+                '愧疚不已', '满心爱意', '心动不已', '害羞不已', '甜蜜不已'
+            ],
+            response: [
+                '能', '不能', '不可以', '拒绝', '接受', '愿意', 
+                '暂时', '永远', '或许', '当然', '勉强', '甘愿', 
+                '默许', '否认', '允许', '禁止', '优先', '延后',
+                '破例', '坚持', '妥协', '认可', '反对', '默许',
+                '当然愿意', '绝对可以', '暂时不行', '永远愿意', '绝不拒绝',
+                '心甘情愿', '满心答应', '勉强同意', '默默允许', '坚决接受',
+                '坦然接受', '欣然同意', '主动接受', '不愿拒绝', '无法拒绝'
+            ],
+            action: [
+                '吃', '看', '听见', '冷', '分手', '和好', 
+                '亲吻', '拥抱', '等待', '陪伴', '牵手', '守护', 
+                '依偎', '对视', '触摸', '回避', '靠近', '远离',
+                '安抚', '撒娇', '照顾', '想念', '奔赴', '停留',
+                '深吻', '轻吻', '拥抱你', '紧紧抱你', '偷偷吻你',
+                '牵手漫步', '相拥而眠', '温柔抚摸', '默默陪伴', '贴身守护',
+                '轻轻依偎', '深情对视', '主动靠近', '紧紧牵手', '用心照顾',
+                '偷偷想念', '奔赴向你', '为你停留', '温柔安抚', '向你撒娇'
+            ],
+            intention: [
+                // 原有浪漫意象
+                '花', '风', '眼', '星', '月', '雨', '光', '海', '雪', '雾',
+                '云', '露', '叶', '火', '糖', '信', '歌', '梦', '香', '暖',
+                '影', '痕', '诗', '玫瑰', '星光', '月光', '细雨', '暖阳', '甜糖', '情书',
+                '情歌', '美梦', '花香', '温柔风', '星光海', '月光下', '细雨中', '暖阳里', '玫瑰花', '甜糖果',
+                // 新增时间词
+                '圣诞节', '明年', '明天', '今晚', '跨年', '新年', '七夕', '情人节', '生日', '周末',
+                '凌晨', '黄昏', '深夜', '早春', '盛夏', '晚秋', '初冬', '明年今日', '下一个冬天', '下一个夏天',
+                // 新增地点词
+                '海边', '山顶', '天台', '书房', '街角', '公园', '花店', '咖啡馆', '电影院', '雪地里',
+                '星空下', '路灯旁', '树荫下', '壁炉边', '沙发上', '窗台边', '走廊尽头', '无人街角', '专属角落'
+            ]
+        };
+
+        // 页面元素
+        const page1 = document.getElementById('page1');
+        const page2 = document.getElementById('page2');
+        const page3 = document.getElementById('page3');
+        const dreamCharacterInput = document.getElementById('dreamCharacter');
+        const btnStartCall = document.getElementById('btnStartCall');
+        const showDreamName = document.getElementById('showDreamName');
+        const showDreamName2 = document.getElementById('showDreamName2');
+        const countdown = document.getElementById('countdown');
+        const btnEnterGame = document.getElementById('btnEnterGame');
+        const questionInput = document.getElementById('question');
+        const btnDrawCard = document.getElementById('btnDrawCard');
+        const resultContainer = document.getElementById('resultContainer');
+
+        // 页面1：开始呼唤按钮点击事件
+        btnStartCall.addEventListener('click', () => {
+            const name = dreamCharacterInput.value.trim();
+            if (!name) {
+                alert('请输入你的梦角名字哦～');
+                return;
+            }
+            dreamName = name;
+            showDreamName.textContent = dreamName;
+            showDreamName2.textContent = dreamName;
+            page1.classList.add('hidden');
+            page2.classList.remove('hidden');
+            
+            // 倒计时逻辑
+            let count = 5;
+            const timer = setInterval(() => {
+                count--;
+                countdown.textContent = count;
+                if (count <= 0) {
+                    clearInterval(timer);
+                    btnEnterGame.disabled = false;
+                    btnEnterGame.textContent = '点击确定联系';
+                }
+            }, 1000);
+        });
+
+        // 页面2：进入游戏按钮点击事件
+        btnEnterGame.addEventListener('click', () => {
+            page2.classList.add('hidden');
+            page3.classList.remove('hidden');
+        });
+
+        // 页面3：抽卡按钮点击事件
+        btnDrawCard.addEventListener('click', () => {
+            const question = questionInput.value.trim();
+            if (!question) {
+                alert('请输入你想问的问题呀～');
+                return;
+            }
+
+            // 清空之前的结果
+            resultContainer.innerHTML = '';
+            
+            // 抽卡逻辑：前三组必抽（每组1个），第四组30%概率抽取
+            const selectedWords = [];
+            selectedWords.push(getRandomWordFromGroup('emotion'));
+            selectedWords.push(getRandomWordFromGroup('response'));
+            selectedWords.push(getRandomWordFromGroup('action'));
+            
+            // 30%概率抽取意向词语组（含新增时间/地点词）
+            const isDrawFourthGroup = Math.random() < 0.3;
+            if (isDrawFourthGroup) {
+                selectedWords.push(getRandomWordFromGroup('intention'));
+            }
+
+            // 随机打乱词语顺序
+            const shuffledWords = selectedWords.sort(() => Math.random() - 0.5);
+
+            // 显示抽取的词语
+            shuffledWords.forEach(word => {
+                const wordTag = document.createElement('span');
+                wordTag.className = 'word-tag';
+                wordTag.textContent = word;
+                resultContainer.appendChild(wordTag);
+            });
+
+            // 按钮状态切换
+            btnDrawCard.disabled = true;
+            btnDrawCard.textContent = '已回应，可重新输入问题';
+            
+            // 输入框变化时恢复按钮状态
+            questionInput.addEventListener('input', function resetBtn() {
+                btnDrawCard.disabled = false;
+                btnDrawCard.textContent = '点击获取回应';
+                questionInput.removeEventListener('input', resetBtn);
+            });
+        });
+
+        // 工具函数：从指定组中随机抽取1个词语
+        function getRandomWordFromGroup(groupName) {
+            const group = wordLib[groupName];
+            return group[Math.floor(Math.random() * group.length)];
+        }
+    </script>
+</body>
+</html>
